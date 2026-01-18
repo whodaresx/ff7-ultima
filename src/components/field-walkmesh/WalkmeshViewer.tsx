@@ -197,44 +197,42 @@ function WalkmeshViewer({
 
   return (
     <div className="relative flex flex-col w-full h-full bg-zinc-900">
-      <div className="absolute top-2 left-2 z-10 flex gap-2 items-center bg-zinc-800/90 px-3 py-2 rounded-md">
-        <span className="text-xs text-zinc-300 font-medium">
+      <div className="absolute top-2 left-2 z-10 flex gap-2 items-center">
+        <span className="text-xs text-zinc-300 font-medium bg-zinc-800/90 px-2 py-1 rounded">
           {fieldName || "Field Walkmesh"}
         </span>
-        <div className="w-px h-4 bg-zinc-600" />
-        <label className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <label className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800/90 px-2 py-1 rounded">
+          Wireframe
           <Switch
             checked={wireframe}
             onCheckedChange={setWireframe}
             className="scale-75"
           />
-          Wireframe
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <label className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800/90 px-2 py-1 rounded">
+          Models
           <Switch
             checked={showModels}
             onCheckedChange={setShowModels}
             className="scale-75"
           />
-          Models
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <label className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800/90 px-2 py-1 rounded">
+          Gateways
           <Switch
             checked={showGateways}
             onCheckedChange={setShowGateways}
             className="scale-75"
           />
-          Gateways
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <label className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800/90 px-2 py-1 rounded">
+          IDs
           <Switch
             checked={showTriangleIds}
             onCheckedChange={setShowTriangleIds}
             className="scale-75"
           />
-          IDs
         </label>
-        <div className="w-px h-4 bg-zinc-600" />
         <Button size="xs" variant="outline" onClick={handleReset}>
           Reset
         </Button>

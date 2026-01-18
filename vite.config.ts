@@ -27,7 +27,8 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         main: 'index.html',
-        map: 'map.html'
+        map: 'map.html',
+        'field-walkmesh': 'field-walkmesh.html'
       }
     }
   }

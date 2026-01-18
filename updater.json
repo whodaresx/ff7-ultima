@@ -1,11 +1,11 @@
 {
-  "version": "1.8.0",
+  "version": "1.8.1",
   "notes": "New Save States manager tab, Run by Default option, Encounters table in Field and World modules, Auto Sense option in Battle module, Fractional multipliers for Exp, Gil and AP",
-  "pub_date": "2025-11-30T22:12:38Z",
+  "pub_date": "2025-12-02T01:17:56Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRWktFU284d290TjVqbTNmS0o5OXF2aHNvdjIrQkI2U0VkQWpJU2pBdzcveEdQdDZOc0tmV1NERXlZN2pZWWgwMFVYaVR5VE4rWjhrSGJXblc2dEcrMUVYbURNM3BSa3c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0NTM3MTU4CWZpbGU6RkY3IFVsdGltYV8xLjguMF94NjQtc2V0dXAuZXhlCkFKaUJjTGlCSjVtYitRR2h3M1hod0ZGeDhnSkRxNVdMRXpWWUNSSEdGVklqRFNVb3E1RGNjdEZxeityVU5PVWRIRlNHSkxNKzREL2lpcmlhVnBTVERBPT0K",
-      "url": "https://github.com/maciej-trebacz/ff7-ultima/releases/download/1.8.0/FF7.Ultima_1.8.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRWktFU284d290TjhUMUFJdEcva3hNVnJmM1MzTDR5SjBja3ViUnpFK2JOb0t6R2w0WkxXSE1nVDhXRmVkcGNrK0RHSGREYVBLOEhqdkNQOEFScjVleTB2eUUvRkd2RWdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0NjM0Njc2CWZpbGU6RkY3IFVsdGltYV8xLjguMV94NjQtc2V0dXAuZXhlCitqME9QSDcwNzRVdk1hVStZdWdnTjZpWWI3OFhmVW95Ujg3UWhpNFl2ZmtrdklZUkxtOXpialoyR3hJdkxrNGRVa3kvak5EZWVYWjhHSS9US0tUYkRRPT0K",
+      "url": "https://github.com/maciej-trebacz/ff7-ultima/releases/download/1.8.1/FF7.Ultima_1.8.1_x64-setup.exe"
     }
   }
 }

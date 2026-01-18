@@ -39,6 +39,7 @@ export interface FF7Addresses {
   battle_id: number;
   field_models_ptr: number;
   field_data_ptr: number;
+  field_section_offsets: number;
   battle_char_base: number;
   ally_limit: number;
   field_name: number;

@@ -65,6 +65,8 @@ export interface FieldModel {
   collision: number,
   interaction: number,
   visible: number,
+  collision_range: number,
+  talk_range: number,
   lights: FieldLights,
 }
 

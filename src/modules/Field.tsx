@@ -2,7 +2,7 @@ import Row from "@/components/Row";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { FF7 } from "@/useFF7";
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, memo, useEffect, useRef } from "react";
 import { WarpFieldModal } from "@/components/modals/WarpFieldModal";
 import {
   Tooltip,
@@ -11,13 +11,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { EditPopover } from "@/components/EditPopover";
-import { Box, Shield, Lightbulb } from "lucide-react";
+import { Box, Lightbulb } from "lucide-react";
 import { Eye } from "lucide-react";
 import { MessageSquare } from "lucide-react";
 import { FieldLightsModal } from "@/components/modals/FieldLightsModal";
 import { useSettings } from "@/useSettings";
 import { useFF7Context } from "@/FF7Context";
 import { FieldEncounterSet, GameModule } from "@/types";
+import { Window } from "@tauri-apps/api/window";
+import { Webview } from "@tauri-apps/api/webview";
+import { listen } from "@tauri-apps/api/event";
+import { readMemory, readMemoryBuffer, DataType } from "@/memory";
+import { useFF7Addresses } from "@/ff7Addresses";
 
 const FieldEncounterRow = memo(
   ({
@@ -123,6 +128,7 @@ export function Field(props: { ff7: FF7 }) {
   const ff7 = props.ff7;
   const state = ff7.gameState;
   const { gameData } = useFF7Context();
+  const { addresses } = useFF7Addresses();
   const { generalSettings, hackSettings, updateHackSettings } = useSettings();
   const [isWarpModalOpen, setIsWarpModalOpen] = useState(false);
   const [editValue, setEditValue] = useState("");
@@ -133,6 +139,12 @@ export function Field(props: { ff7: FF7 }) {
   const [isLightsModalOpen, setIsLightsModalOpen] = useState(false);
   const [currentLightsModelIndex, setCurrentLightsModelIndex] = useState<number | null>(null);
   const activeEncounterTable = state.fieldAltEncountersEnabled ? 2 : 1;
+  
+  const [walkmeshWindow, setWalkmeshWindow] = useState<Window | null>(null);
+  const [walkmeshWebview, setWalkmeshWebview] = useState<Webview | null>(null);
+  const [walkmeshBuffer, setWalkmeshBuffer] = useState<number[]>([]);
+  const [gatewaysBuffer, setGatewaysBuffer] = useState<number[]>([]);
+  const lastFieldId = useRef<number>(-1);
 
   const openWarpModal = () => {
     setIsWarpModalOpen(true);
@@ -166,6 +178,140 @@ export function Field(props: { ff7: FF7 }) {
   const closeLightsModal = () => {
     setIsLightsModalOpen(false);
     setCurrentLightsModelIndex(null);
+  };
+
+  const readWalkmeshFromMemory = useCallback(async (fieldId: number): Promise<boolean> => {
+    if (!addresses) return false;
+    
+    try {
+      const fieldDataPtr = await readMemory(addresses.field_data_ptr, DataType.Int);
+      if (fieldDataPtr === 0) return false;
+      
+      const section5Offset = await readMemory(addresses.field_section_offsets + 4 * 4, DataType.Int);
+      const walkmeshAddr = fieldDataPtr + 4 + section5Offset;
+      
+      const triangleCount = await readMemory(walkmeshAddr, DataType.Int);
+      if (triangleCount === 0 || triangleCount > 10000) return false;
+      
+      const dataSize = 4 + triangleCount * 24 + triangleCount * 6;
+      const buffer = await readMemoryBuffer(walkmeshAddr, dataSize);
+      setWalkmeshBuffer(buffer);
+
+      const section8Offset = await readMemory(addresses.field_section_offsets + 7 * 4, DataType.Int);
+      const triggersAddr = fieldDataPtr + 4 + section8Offset;
+      const triggersBuffer = await readMemoryBuffer(triggersAddr, 344);
+      setGatewaysBuffer(triggersBuffer);
+      
+      lastFieldId.current = fieldId;
+      return true;
+    } catch (error) {
+      console.error("Failed to read walkmesh:", error);
+      return false;
+    }
+  }, [addresses]);
+
+  useEffect(() => {
+    if (state.fieldId !== lastFieldId.current && state.fieldId > 0) {
+      readWalkmeshFromMemory(state.fieldId);
+    }
+  }, [state.fieldId, readWalkmeshFromMemory]);
+
+  useEffect(() => {
+    if (walkmeshWebview && walkmeshBuffer.length > 0) {
+      walkmeshWebview.emit("field-walkmesh-data", {
+        walkmeshBuffer,
+        gatewaysBuffer,
+        fieldModels: state.fieldModels,
+        fieldName: state.fieldName,
+        fieldId: state.fieldId,
+      });
+    }
+  }, [walkmeshWebview, walkmeshBuffer, gatewaysBuffer, state.fieldModels, state.fieldName, state.fieldId]);
+
+  useEffect(() => {
+    return () => {
+      if (walkmeshWindow) {
+        walkmeshWindow.close();
+      }
+    };
+  }, [walkmeshWindow]);
+
+  useEffect(() => {
+    const unlisten = listen<{ modelIndex: number; x: number; y: number; z: number; triangleId: number }>(
+      "field-model-position-update",
+      (event) => {
+        const { modelIndex, x, y, z, triangleId } = event.payload;
+        const model = state.fieldModels[modelIndex];
+        if (model) {
+          ff7.setFieldModelCoordinates(modelIndex, x, y, triangleId >= 0 ? z : model.z, model.direction, triangleId);
+        }
+      }
+    );
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [ff7, state.fieldModels]);
+
+  const handleOpenWalkmeshViewer = async () => {
+    if (walkmeshWindow) {
+      await walkmeshWindow.setFocus();
+      return;
+    }
+
+    const appWindow = new Window("walkmeshviewer", {
+      parent: Window.getCurrent(),
+      title: "Ultima - Walkmesh Viewer",
+      theme: "dark",
+      resizable: true,
+      visible: false,
+      center: true,
+      width: 800,
+      height: 600,
+      backgroundColor: "#111212",
+    });
+
+    appWindow.once("tauri://created", () => {
+      const webview = new Webview(appWindow, "walkmeshviewer", {
+        url: "field-walkmesh.html",
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+        focus: true,
+        backgroundColor: "#111212",
+      });
+
+      const resize = async () => {
+        const size = await appWindow.innerSize();
+        await webview.setSize(size);
+      };
+
+      webview.once("tauri://created", () => {
+        resize();
+        appWindow.show();
+        if (walkmeshBuffer.length > 0) {
+          webview.emit("field-walkmesh-data", {
+            walkmeshBuffer,
+            gatewaysBuffer,
+            fieldModels: state.fieldModels,
+            fieldName: state.fieldName,
+            fieldId: state.fieldId,
+          });
+        }
+      });
+
+      appWindow.listen("tauri://resize", resize);
+      resize();
+
+      setWalkmeshWindow(appWindow);
+      setWalkmeshWebview(webview);
+
+      appWindow.onCloseRequested(() => {
+        setWalkmeshWindow(null);
+        setWalkmeshWebview(null);
+      });
+    });
   };
 
   const getEnemyNamesFromEncounterId = useCallback((encounterId: number): string => {
@@ -460,9 +606,19 @@ export function Field(props: { ff7: FF7 }) {
 
       {state.fieldModels.length > 0 && state.fieldModels[0] && (
         <>
-          <h2 className="uppercase mt-2 font-medium text-sm border-b border-zinc-600 pb-0 mb-2 tracking-wide text-zinc-900 dark:text-zinc-100">
-            Field Models
-          </h2>
+          <div className="relative mb-2 mt-2">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="uppercase font-medium text-sm tracking-wide text-zinc-900 dark:text-zinc-100">
+                Field Models
+              </h2>
+              <div className="flex space-x-2">
+                <Button variant="default" size="xs" onClick={handleOpenWalkmeshViewer}>
+                  Open Walkmesh Viewer
+                </Button>
+              </div>
+            </div>
+            <div className="border-b border-zinc-600 -mt-1" />
+          </div>
           <table className="w-full">
             <thead className="bg-zinc-800 text-xs text-left">
               <tr>

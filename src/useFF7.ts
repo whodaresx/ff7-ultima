@@ -981,7 +981,7 @@ export function useFF7(addresses: FF7Addresses) {
       await writeMemory(base + index * length + 0x14, z, DataType.Int);
       await writeMemory(base + index * length + 0x40, direction, DataType.Int);
     },
-    setFieldModelCoordinates: async (index: number, x: number, y: number, z: number, direction: number) => {
+    setFieldModelCoordinates: async (index: number, x: number, y: number, z: number, direction: number, triangle?: number) => {
       const base = addresses.field_models_coords;
       const length = 0x88;
 
@@ -989,6 +989,10 @@ export function useFF7(addresses: FF7Addresses) {
       await writeMemory(base + index * length + 4, y << 12, DataType.SignedInt);
       await writeMemory(base + index * length + 8, z << 12, DataType.SignedInt);
       await writeMemory(base + index * length + 44, direction, DataType.Byte);
+      
+      if (triangle !== undefined && triangle >= 0) {
+        await writeMemory(addresses.field_models_objs + index * 0x88 + 0x78, triangle, DataType.Short);
+      }
     },
     setFieldModelCollision: async (index: number, collision: boolean) => {
       await writeMemory(addresses.field_models_objs + index * 0x88 + 0x5f, collision ? 0 : 1, DataType.Byte);
